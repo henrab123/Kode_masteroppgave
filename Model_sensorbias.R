@@ -130,25 +130,27 @@ creating_obj <- function(f, data, parameter, random_effects, mapping=NULL){
 
 # Calculating V22 - Model 1 - Without question specific variance:
 data <- RTMB_V22
-obj_V22_m1 <- creating_obj(f, RTMB_V22, par_V22, c("gamma", "s"), mapping=list(lambda = factor(rep(NA,20)), kappa=factor(rep(NA, 2))))
+obj_V22_m1 <- MakeADFun(func = f, parameters = par_V22, random = c("gamma", "s"), map = list(lambda = factor(rep(NA,20)), kappa=factor(rep(NA, 2))))
+fit_V22_m1 <- nlminb(start = obj_V22_m1$par, objective = obj_V22_m1$fn, gradient = obj_V22_m1$gr)
 sdr_V22_m1 <- sdreport(obj_V22_m1)
 summary(sdr_V22_m1)
 
 # Calculating V22 - Model 2 - With question specific variance:
-data <- RTMB_V22
-obj_V22_m2 <- creating_obj(f, RTMB_V22, par_V22, c("gamma", "s"), mapping=list(log_std_gamma = factor(NA), log_std_s=factor(NA)))
+obj_V22_m2 <- MakeADFun(func = f, parameters = par_V22, random = c("gamma", "s"), map = list(log_std_gamma = factor(NA), log_std_s=factor(NA)))
+fit_V22_m2 <- nlminb(start = obj_V22_m2$par, objective = obj_V22_m2$fn, gradient = obj_V22_m2$gr)
 sdr_V22_m2 <- sdreport(obj_V22_m2)
 summary(sdr_V22_m2)
 
 # Calculating V23 - Model 1 - Without question specific variance:
 data <- RTMB_V23
-obj_V23_m1 <- creating_obj(f, RTMB_V23, par_V23, c("gamma", "s"), mapping=list(lambda = factor(rep(NA,17)), kappa=factor(rep(NA, 2))))
+obj_V23_m1 <- MakeADFun(func = f, parameters = par_V23, random = c("gamma", "s"), map = list(lambda = factor(rep(NA,17)), kappa=factor(rep(NA, 2))))
+fit_V23_m1 <- nlminb(start = obj_V23_m1$par, objective = obj_V23_m1$fn, gradient = obj_V23_m1$gr)
 sdr_V23_m1 <- sdreport(obj_V23_m1)
 summary(sdr_V23_m1)
 
 # Calculating V23 - Model 2 - With question specific variance:
-data <- RTMB_V23
-obj_V23_m2 <- creating_obj(f, RTMB_V23, par_V23, c("gamma", "s"), mapping=list(log_std_gamma = factor(NA), log_std_s=factor(NA)))
+obj_V23_m2 <- MakeADFun(func = f, parameters = par_V23, random = c("gamma", "s"), map = list(log_std_gamma = factor(NA), log_std_s=factor(NA)))
+fit_V23_m2 <- nlminb(start = obj_V23_m2$par, objective = obj_V23_m2$fn, gradient = obj_V23_m2$gr)
 sdr_V23_m2 <- sdreport(obj_V23_m2)
 summary(sdr_V23_m2)
 
@@ -168,12 +170,6 @@ LRT <- function(nll0, nll1){
   p_value <- 0.5*pchisq(lambda, 7, lower.tail = FALSE) + 0.5*pchisq(lambda, 8, lower.tail = FALSE)
   return(p_value)
 }
-
-nll_null <- 56
-nll_alt  <- 48.7
-
-p_val <- LRT(nll_null, nll_alt)
-print(p_val)
 
 #####################################################
 ## CREATING THE FUNCTION TO CALCULATE NLL UNDER H0 ##
@@ -249,121 +245,47 @@ obj_V22_m1_H0 <- creating_obj(f_H0, RTMB_V22, par_V22_H0, c("gamma"), mapping=li
 sdr_V22_m1_H0 <- sdreport(obj_V22_m1_H0)
 summary(sdr_V22_m1_H0)
 
-test <- LRT(obj_V22_m1_H0$fn(obj_V22_m1_H0$par), obj_V22_m1$fn(obj_V22_m1$par))
 
-obj_V22_m1_H0$fn(obj_V22_m1_H0$par)
-obj_V22_m1$fn(obj_V22_m1$par)
-
-h <- AIC(1000,obj_V22_m1$fn(obj_V22_m1$par))
-
-1-test
-
-
-
-
-
-
-
-
-
-
-
-
-par_V23_H0 <- par_V22
-par_V23_H0$log_std_s <- -Inf
 
 # Calculating V22 - Model 1 - Under the 0 hypothesis:
 data <- RTMB_V22
-obj_V22_m1 <- creating_obj(f, RTMB_V22, par_V22, c("gamma", "s"), mapping=list(lambda = factor(rep(NA,20)), kappa=factor(rep(NA, 2))))
+obj_V22_m1 <- MakeADFun(func = f, parameters = par_V22, random = c("gamma", "s"), map = list(lambda = factor(rep(NA,20)), kappa=factor(rep(NA, 2))))
+fit_V22_m1 <- nlminb(start = obj_V22_m1$par, objective = obj_V22_m1$fn, gradient = obj_V22_m1$gr)
 sdr_V22_m1 <- sdreport(obj_V22_m1)
 summary(sdr_V22_m1)
 
 
+#######################
+### MODEL SELECTION ###
+#######################
 
-data <- RTMB_V22
-obj_V22_m1_H0 <- creating_obj(f, RTMB_V22, par_V22, c("gamma", "s"), mapping=list(lambda = factor(rep(NA,20)), kappa=factor(rep(NA, 2)), s=factor(rep(NA,6))))
-sdr_V22_m1_H0 <- sdreport(obj_V22_m1_H0)
-summary(sdr_V22_m1_H0)
-
-L_V22_M1    <- obj_V22_m1$fn(obj_V22_m1$par)
-L_V22_M1_H0 <- obj_V22_m1_H0$fn(obj_V22_m1_H0$par)
-
-lambda_V22_M1  <- 2*(L_V22_M1-L_V22_M1_H0)
-p_value_V22_M1 <- 0.5*pchisq(lambda_V22_M1, 1, lower.tail = FALSE) + 0.5*pchisq(lambda_V22_M1, 2, lower.tail = FALSE)
-p_value_V22_M1
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Calculating V22 - Model 2 - Under the 0 hypothesis:
-data <- RTMB_V22
-obj_V22_m2_H0 <- creating_obj(f, RTMB_V22, par_V22, c("gamma"), mapping=list(log_std_gamma = factor(NA), log_std_s=factor(NA), s=factor(rep(NA,6))))
-sdr_V22_m2_H0 <- sdreport(obj_V22_m2_H0)
-summary(sdr_V22_m2_H0)
-
-# Calculating V23 - Model 1 - Under the 0 hypothesis:
-
-# Calculating V23 - Model 2 - Under the 0 hypothesis:
-
-#Calculating the p-value for - Model 1 - V22:
-L_V22_M1    <- obj_V22_m1$fn(obj_V22_m1$par)
-L_V22_M1_H0 <- obj_V22_m1_H0$fn(obj_V22_m1_H0$par)
-
-lambda_V22_M1  <- 2*(L_V22_M1-L_V22_M1_H0)
-p_value_V22_M1 <- 0.5*pchisq(lambda_V22_M1, 1, lower.tail = FALSE) + 0.5*pchisq(lambda_V22_M1, 2, lower.tail = FALSE)
-p_value_V22_M1
-
-#Calculating the p-value for - Model 2 - V22:
-L_V22_M2    <- obj_V22_m2$fn(obj_V22_m2$par)
-L_V22_M2_H0 <- obj_V22_m2_H0$fn(obj_V22_m2_H0$par)
-
-lambda_V22_M2  <- 2*(L_V22_M2-L_V22_M2_H0)
-p_value_V22_M2 <- 0.5*pchisq(lambda_V22_M2, 1, lower.tail = FALSE) + 0.5*pchisq(lambda_V22_M2, 2, lower.tail = FALSE)
-
-#Calculating the p-value for - Model 1 - V23:
-
-#Calculating the p-value for - Model 2 - V23:
-
-L1V22 <-obj_V22$fn(obj_V22$par)
-L1V23 <-obj_V23$fn(obj_V23$par)
-L0V22 #<-obj_V22$fn(obj_V22$par)
-L0V23 #<-obj_V23$fn(obj_V23$par)
-
-df1=1
-df2=2
-
-lambda_V22 <- -2*(L1V22-L0V22)
-lambda_V23 <- 2*(L1V23-L0V23)
-
-p_value_V22 <- 0.5*pchisq(lambda_V22, 1, lower.tail = FALSE) + 0.5*pchisq(lambda_V22, 2, lower.tail = FALSE)
-p_value_V23 <- 0.5*pchisq(lambda_V23, 1, lower.tail = FALSE) + 0.5*pchisq(lambda_V23, 2, lower.tail = FALSE)
-
-p_value_V22
-p_value_V23
+k_V22_m1 <- length(summary(sdr_V22_m1))
+k_V22_m2 <- length(summary(sdr_V22_m2))
+k_V23_m1 <- length(summary(sdr_V23_m1))
+k_V23_m2 <- length(summary(sdr_V23_m2))
 
 ###########
 ### AIC ###
 ###########
 
-AIC <- function(k, nll){
+AIC_TMB <- function(k, nll){
   return(2*k + 2*nll)
 }
 
-
+AIC_V22_m1 <- AIC_TMB(k_V22_m1, fit_V22_m1$objective)
+AIC_V22_m2 <- AIC_TMB(k_V22_m2, fit_V22_m2$objective)
+AIC_V23_m1 <- AIC_TMB(k_V23_m1, fit_V23_m1$objective)
+AIC_V23_m2 <- AIC_TMB(k_V23_m2, fit_V23_m2$objective)
 
 ###########
 ### BIC ###
 ###########
 
-BIC <- function(n, k, nll){
+BIC_TMB <- function(n, k, nll){
   return(log(n)*k + 2*nll)
 }
+
+BIC_V22_m1 <- BIC_TMB(682*20, k_V22_m1, fit_V22_m1$objective)
+BIC_V22_m2 <- BIC_TMB(682*20, k_V22_m2, fit_V22_m2$objective)
+BIC_V23_m1 <- BIC_TMB(811*17, k_V23_m1, fit_V23_m1$objective)
+BIC_V23_m2 <- BIC_TMB(811*17, k_V23_m2, fit_V23_m2$objective)
