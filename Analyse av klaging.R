@@ -9,8 +9,8 @@ KLAGE_V23$gamma <- estimated_parameters_V23_m1$gamma[,"Estimate"]
 KLAGE_V22$s <- estimated_parameters_V22_m1$s[,"Estimate"][as.numeric(factor(KLAGE_V22$kommisjon))]
 KLAGE_V23$s <- estimated_parameters_V23_m1$s[,"Estimate"][as.numeric(factor(KLAGE_V23$kommisjon))]
 
-KLAGE_V22$Year <- char(2022)
-KLAGE_V23$Year <- char(2023)
+KLAGE_V22$Year <- char("2022")
+KLAGE_V23$Year <- char("2023")
 
 KLAGE_Kombinert <- bind_rows(KLAGE_V22, KLAGE_V23)
 KLAGE_Kombinert_UtenA$Year <- as.factor(KLAGE_Kombinert_UtenA$Year)
@@ -510,3 +510,65 @@ ggplot(KLAGE_V22_utenF, aes(x = totalScore, y = as.factor(klagde), color = final
     legend.text = element_text(size = 12),
     legend.title = element_text(size = 13, face = "bold")
   )
+
+
+################
+### PLOTTING ###
+################
+
+library(ggplot2)
+library(viridis)  # For fargepalett som er fargeblind- og trykkvennlig
+Sys.setlocale("LC_CTYPE", "UTF-8")
+
+
+
+
+
+# Parametre
+beta0 <- -4.747
+beta_gamma <- 0.785
+karakter_effekter <- c("B" = 0, "C" = 1.351, "D" = 2.042, "E" = 2.268, "F" = 5.183)
+
+# Sekvens for gamma
+gamma_vals <- seq(-4, 4, length.out = 500)
+
+# Lag datasett
+logistisk_data <- do.call(rbind, lapply(names(karakter_effekter), function(karakter) {
+  eff <- karakter_effekter[karakter]
+  eta <- beta0 + eff + beta_gamma * gamma_vals
+  data.frame(
+    gamma = gamma_vals,
+    sannsynlighet = 1 / (1 + exp(-eta)),
+    karakter = karakter
+  )
+}))
+
+# Gj??r karakter til en faktor med kontrollert rekkef??lge
+logistisk_data$karakter <- factor(logistisk_data$karakter, levels = c("B", "C", "D", "E", "F"))
+
+# Lag plottet
+ggplot(logistisk_data, aes(x = gamma, y = sannsynlighet, color = karakter)) +
+  geom_line(size = 1.1) +
+  scale_color_brewer(palette = "Dark2") +
+  labs(
+    title = expression(paste("Sannsynlighetskurver for karakterene B-F som funksjon av latent variabel ", gamma)),
+    x = expression(paste("Latent variabel ", gamma)),
+    y = "Sannsynlighet for \u00E5 klage",
+    color = "Karakter"
+  ) +
+  theme_minimal(base_size = 20) +
+  theme(
+    plot.title = element_text(face = "bold", size = 40, hjust = 0.5),
+    plot.subtitle = element_text(size = 20, hjust = 0.5),
+    legend.position = "right",
+    legend.title = element_text(face = "bold", size = 22),
+    legend.text = element_text(size = 28),
+    axis.title.x = element_text(size = 34, margin = margin(t = 15)),
+    axis.title.y = element_text(size = 34, margin = margin(r = 15)),
+    axis.text = element_text(size = 18)
+  )
+
+
+
+
+

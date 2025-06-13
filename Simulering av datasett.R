@@ -1,5 +1,5 @@
 # Setting seed:
-set.seed(2)
+set.seed(1)
 
 #Defining function:
 simulate_data <- function(N=100, 
@@ -87,8 +87,8 @@ make_parameter_list <- function(N, K, log_std_gamma = log(1), log_std_s = log(1)
     gamma = rep(0,N),          # Student random effects
     
     # Standard deviation
-    log_std_s      = log_std_s,   # Std deviation for examiners
-    log_std_gamma  = log_std_gamma,   # Std deviation for students
+    log_std_s      = log(1),   # Std deviation for examiners
+    log_std_gamma  = log(1),   # Std deviation for students
     
     # Parameter to model the IRT
     lambda = rep(1, (QA+QM)),

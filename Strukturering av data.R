@@ -600,9 +600,33 @@ for (i in 1:8) {
 F_test_data_V22 <- PT_test_data_V22 %>% select(kommisjon)
 F_test_data_V22$scoreDiff <- PT_test_data_V22$manualRel - PT_test_data_V22$autoRel
 
+# Fit a linear model instead of aov
+lm_model_V22 <- lm(scoreDiff ~ as.factor(kommisjon), data = F_test_data_V22)
+
+# Get full model summary with coefficients
+summary(lm_model_V22)
+
+#F-test
+anova_model_V22 <- aov(scoreDiff ~ as.factor(kommisjon), data = F_test_data_V22)
+summary(anova_model_V22)
+
+# Preparing for paired F-test (V23)
 F_test_data_V23 <- PT_test_data_V23 %>% select(kommisjon)
 F_test_data_V23$scoreDiff <- PT_test_data_V23$manualRel - PT_test_data_V23$autoRel
 
+# Fit a linear model to extract coefficients
+lm_model_V23 <- lm(scoreDiff ~ as.factor(kommisjon), data = F_test_data_V23)
+
+# Get full model summary with coefficients
+summary(lm_model_V23)
+
+# Optional: Run ANOVA (F-test)
+anova_model_V23 <- aov(scoreDiff ~ as.factor(kommisjon), data = F_test_data_V23)
+summary(anova_model_V23)
+
+
+
+anova(F_test_data_V22)
 #Preparing data fort RTMB:'
 
 #cATEGORIZING THE MANUAL SCORED QUESTIONS FROM 1 TO N:

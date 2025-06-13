@@ -141,6 +141,15 @@ fit_V22_m2 <- nlminb(start = obj_V22_m2$par, objective = obj_V22_m2$fn, gradient
 sdr_V22_m2 <- sdreport(obj_V22_m2)
 summary(sdr_V22_m2)
 
+# Calculating V22 - Model 2 - With question specific variance - REML:
+random_effect_names_V22 <- c("gamma", "s")
+random_effect_names_V22 <- c(random_effect_names_V22, paste0("alpha", 1:ncol(RTMB_V22$Y)))
+
+obj_V22_m2_REML <- MakeADFun(func = f, parameters = par_V22, random = random_effect_names_V22, map = list(log_std_gamma = factor(NA), log_std_s=factor(NA)))
+fit_V22_m2_REML <- nlminb(start = obj_V22_m2_REML$par, objective = obj_V22_m2_REML$fn, gradient = obj_V22_m2_REML$gr)
+sdr_V22_m2_REML <- sdreport(obj_V22_m2_REML)
+IMPORTANT <- summary(sdr_V22_m2_REML)
+
 # Calculating V23 - Model 1 - Without question specific variance:
 data <- RTMB_V23
 obj_V23_m1 <- MakeADFun(func = f, parameters = par_V23, random = c("gamma", "s"), map = list(lambda = factor(rep(NA,17)), kappa=factor(rep(NA, 2))))
@@ -154,22 +163,20 @@ fit_V23_m2 <- nlminb(start = obj_V23_m2$par, objective = obj_V23_m2$fn, gradient
 sdr_V23_m2 <- sdreport(obj_V23_m2)
 summary(sdr_V23_m2)
 
+# Calculating V23 - Model 2 - With question specific variance - REML:
+random_effect_names_V23 <- c("gamma", "s")
+random_effect_names_V23 <- c(random_effect_names_V23, paste0("alpha", 1:ncol(RTMB_V23$Y)))
+
+obj_V23_m2 <- MakeADFun(func = f, parameters = par_V23, random = random_effect_names_V23, map = list(log_std_gamma = factor(NA), log_std_s=factor(NA)))
+fit_V23_m2 <- nlminb(start = obj_V23_m2$par, objective = obj_V23_m2$fn, gradient = obj_V23_m2$gr)
+sdr_V23_m2 <- sdreport(obj_V23_m2)
+IMPORTANT_2 <- summary(sdr_V23_m2)
+
 # Summary
 summary(sdr_V22_m1)
 summary(sdr_V22_m2)
 summary(sdr_V23_m1)
 summary(sdr_V23_m2)
-
-###########################
-## LIKELIHOOD RATIO TEST ##
-###########################
-
-# Function to calculate it:
-LRT <- function(nll0, nll1){
-  lambda  <- 2*(nll0-nll1)
-  p_value <- 0.5*pchisq(lambda, 7, lower.tail = FALSE) + 0.5*pchisq(lambda, 8, lower.tail = FALSE)
-  return(p_value)
-}
 
 #####################################################
 ## CREATING THE FUNCTION TO CALCULATE NLL UNDER H0 ##
@@ -211,7 +218,7 @@ f_H0 <- function(parms){
           q_count <- q_count + 1
         }
       } else {
-        eta = lambda[q]*gamma[i]         # Manually  corrected q
+        eta = lambda[q]*gamma[i]       # Manually  corrected q
       } 
       
       # Updating the nll:
@@ -232,28 +239,65 @@ f_H0 <- function(parms){
   return(nll)
 }
 
+
+###########################
+## LIKELIHOOD RATIO TEST ##
+###########################
+
+# Function to calculate it:
+LRT <- function(nll0, nll1){
+  lambda  <- 2*(nll0-nll1)
+  print(lambda)
+  p_value <- 0.5*pchisq(lambda, 1, lower.tail = FALSE) + 0.5*pchisq(lambda, 2, lower.tail = FALSE)
+  return(p_value)
+}
+
 ##########################
 ## PERFORMING THE TEST ###
 ##########################
 
 # Creating parameter lists under H0:
 par_V22_H0 <- par_V22
-par_V22_H0$log_std_s <- log(1)
-
-data <- RTMB_V22
-obj_V22_m1_H0 <- creating_obj(f_H0, RTMB_V22, par_V22_H0, c("gamma"), mapping=list(s=factor(rep(NA,6)), lambda = factor(rep(NA,20)), kappa=factor(rep(NA, 2)), log_std_s=factor(NA)))
-sdr_V22_m1_H0 <- sdreport(obj_V22_m1_H0)
-summary(sdr_V22_m1_H0)
-
-
+par_V23_H0 <- par_V23
+par_V22_H0$log_std_s <- log(0)
+par_V23_H0$log_std_s <- log(0)
 
 # Calculating V22 - Model 1 - Under the 0 hypothesis:
 data <- RTMB_V22
-obj_V22_m1 <- MakeADFun(func = f, parameters = par_V22, random = c("gamma", "s"), map = list(lambda = factor(rep(NA,20)), kappa=factor(rep(NA, 2))))
-fit_V22_m1 <- nlminb(start = obj_V22_m1$par, objective = obj_V22_m1$fn, gradient = obj_V22_m1$gr)
-sdr_V22_m1 <- sdreport(obj_V22_m1)
-summary(sdr_V22_m1)
+obj_V22_m1_H0 <- MakeADFun(func = f_H0, parameters = par_V22_H0, random = c("gamma"), map = list(lambda = factor(rep(NA,20)), kappa=factor(rep(NA, 2)), log_std_s=factor(NA)))
+fit_V22_m1_H0 <- nlminb(start = obj_V22_m1_H0$par, objective = obj_V22_m1_H0$fn, gradient = obj_V22_m1_H0$gr)
+sdr_V22_m1_H0 <- sdreport(obj_V22_m1_H0)
+summary(sdr_V22_m1_H0)
 
+# Calculating V22 - Model 2 - Under the 0 hypothesis:
+data <- RTMB_V22
+obj_V22_m2_H0 <- MakeADFun(func = f_H0, parameters = par_V22_H0, random = c("gamma"), map = list(log_std_gamma = factor(NA), log_std_s=factor(NA)))
+fit_V22_m2_H0 <- nlminb(start = obj_V22_m2_H0$par, objective = obj_V22_m2_H0$fn, gradient = obj_V22_m2_H0$gr)
+sdr_V22_m2_H0 <- sdreport(obj_V22_m2_H0)
+summary(sdr_V22_m2_H0)
+
+# Calculating V23 - Model 1 - Under the 0 hypothesis:
+data <- RTMB_V23
+obj_V23_m1_H0 <- MakeADFun(func = f_H0, parameters = par_V23_H0, random = c("gamma"), map = list(lambda = factor(rep(NA,17)), kappa=factor(rep(NA, 2)), log_std_s=factor(NA)))
+fit_V23_m1_H0 <- nlminb(start = obj_V23_m1_H0$par, objective = obj_V23_m1_H0$fn, gradient = obj_V23_m1_H0$gr)
+sdr_V23_m1_H0 <- sdreport(obj_V23_m1_H0)
+summary(sdr_V23_m1_H0)
+
+# Calculating V23 - Model 2 - Under the 0 hypothesis:
+data <- RTMB_V23
+obj_V23_m2_H0 <- MakeADFun(func = f_H0, parameters = par_V23_H0, random = c("gamma"), map = list(log_std_gamma = factor(NA), kappa=factor(rep(NA, 2)), log_std_s=factor(NA)))
+fit_V23_m2_H0 <- nlminb(start = obj_V23_m2_H0$par, objective = obj_V23_m2_H0$fn, gradient = obj_V23_m2_H0$gr)
+sdr_V23_m2_H0 <- sdreport(obj_V23_m2_H0)
+summary(sdr_V23_m2_H0)
+
+fit_V22_m2_H0$objective
+fit_V22_m2$objective
+
+p_value_V22_m1 <- LRT(fit_V22_m1_H0$objective, fit_V22_m1$objective)
+p_value_V22_m2 <- LRT(fit_V22_m2_H0$objective, fit_V22_m2$objective)
+
+p_value_V23_m1 <- LRT(fit_V23_m1_H0$objective, fit_V23_m1$objective)
+p_value_V23_m2 <- LRT(fit_V23_m2$objective, fit_V23_m2_H0$objective)
 
 #######################
 ### MODEL SELECTION ###

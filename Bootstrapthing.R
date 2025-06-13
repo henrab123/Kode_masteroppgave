@@ -4,7 +4,7 @@
 
 #Clearifiyng the names
 RTMB_V22
-estimated_parameters_V22_m1$
+estimated_parameters_V22_m2
 
 
 bootstrap_par <- function(estimated_par, data){
@@ -45,8 +45,8 @@ bootstrap_par <- function(estimated_par, data){
   lambda <- estimated_par$lambda[,1]
   kappa  <- estimated_par$kappa[,1]
   
-  log_std_gamma <- estimated_par$log_std_gamma[,1]
-  log_std_s     <- estimated_par$log_std_s[,1]
+  log_std_gamma <- estimated_par$log_std_gamma[1]
+  log_std_s     <- estimated_par$log_std_s[1]
   
   #Returning included estimates:
   return(list(
@@ -100,11 +100,6 @@ run_paragen <- function(bootstrap_par){
 
 
 #debugonce(bootstrap_par)
-SIM_V22 <- bootstrap_par(estimated_parameters_V22_m1, RTMB_V22)
-SIM_V22_DATA <- run_datagen(SIM_V22)
-SIM_V22_par  <- run_paragen(SIM_V22)
-
-
 
 # LET THE BOOTSTRAP BEGIN #
 
@@ -140,17 +135,29 @@ summary(SIM_sdr_V22_m1_2)
 #######################
 ####################
 
-Bootstrap_X5000 <- function(boot_par, B=1, name = "Test"){
+SIM_V22   <- bootstrap_par(estimated_parameters_V22_m1, RTMB_V22)
+SIM_V22_DATA  <- run_datagen(SIM_V22)
+SIM_V22_par   <- run_paragen(SIM_V22)
+SIM_V22_par_2 <- run_paragen(bootstrap_par(estimated_parameters_V22_m2, RTMB_V22))
+
+
+data <- SIM_V22_DATA
+obj_i <- MakeADFun(func = f, parameters = SIM_V22_par, random = c("gamma","s"), map = list(log_std_gamma = factor(NA), log_std_s=factor(NA)))
+fit_i <- nlminb(start = obj_i$par, objective = obj_i$fn, gradient = obj_i$gr)
+
+
+Bootstrap_X5000 <- function(boot_par_1, boot_par_2, B=1, name = "Test"){
   
   dir.create("C:/Users/andre/OneDrive/Skrivebord/Filer-Master/Simulering_Biaskorreksjon", showWarnings = FALSE)
-  boot_par_combined <- flatten_selected_fields(boot_par)
+  boot_par_combined <- flatten_selected_fields(boot_par_2)
 
   for (i in 1:B){
     set.seed(i)
-    data <<- run_datagen(boot_par)
-    par  <- run_paragen(boot_par)
-    
-    obj_i <- creating_obj(f, data, par, c("gamma", "s"), mapping=list(lambda = factor(rep(NA,20)), kappa=factor(rep(NA, 2))))
+    data <<- run_datagen(boot_par_2)
+    par  <-  run_paragen(boot_par_1)
+
+    obj_i <- MakeADFun(func = f, parameters = par, random = c("gamma","s"), map = list(lambda = factor(rep(NA,20)), kappa=factor(rep(NA, 2))))
+    fit_i <- nlminb(start = obj_i$par, objective = obj_i$fn, gradient = obj_i$gr)
     sdr_i <- sdreport(obj_i)
     sry_i <- summary(sdr_i, select = c("all", "fixed", "random", "report"), p.value = TRUE)
     
@@ -166,7 +173,13 @@ Bootstrap_X5000 <- function(boot_par, B=1, name = "Test"){
   return(boot_par_combined)
 }
 
+bootstrap_par_V22_m2 <- bootstrap_par(estimated_parameters_V22_m2, RTMB_V22)
+bootstrap_par_V22_m1 <- bootstrap_par(estimated_parameters_V22_m1, RTMB_V22)
+debugonce(Bootstrap_X5000)
 
+V2022_M2_SIM <- Bootstrap_X5000(bootstrap_par_V22_m1, bootstrap_par_V22_m2, B=1000, "V2022_m2")
+
+Test$s_1
 
 ######################
 ### BIAS CORECTION ###
